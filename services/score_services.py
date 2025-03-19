@@ -2,11 +2,37 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from services.indoor_score_generator import generate_indoor_scores
-from services.persistance.dbconnect import get_database
+from services.outdoor_score_generator import generate_outdoor_scores, generate_double_720_scores
+import services.persistance.dbconnect as db_services
+
+db = db_services.get_database()
+scores = db["scores"]
+
 
 url = "https://ianseo.net/TourList.php?Year=2025&countryid=IRL&comptime=&timeType=utc"
 #comp_url = "https://ianseo.net/TourInfo.php?TourID="
 
+
+def process_indoor_comp_data(comp_year, comp_id):
+    individual_score_link = ind_link_generator(comp_year, comp_id)
+    list_of_scores = generate_indoor_scores(comp_year,individual_score_link,comp_id)
+    for score in list_of_scores:    
+        scores.insert_one(score.dict())
+        
+
+def process_outdoor_720_comp_data(comp_year, comp_id):
+    individual_score_link = ind_link_generator(comp_year, comp_id)
+    list_of_scores = generate_outdoor_scores(comp_year,individual_score_link,comp_id)
+    for score in list_of_scores:    
+        scores.insert_one(score.dict())
+        
+
+def process_outdoor_double_720_comp_data(comp_year, comp_id):
+    individual_score_link = ind_link_generator(comp_year, comp_id)
+    list_of_scores = generate_double_720_scores(comp_year,individual_score_link,comp_id)
+    for score in list_of_scores:    
+        scores.insert_one(score.dict())
+        
 
 def process_year_data(comp_country,comp_year):
     comp_list = get_competition_list(year_link_genator(comp_country, comp_year))
