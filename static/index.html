@@ -3,75 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D3.js Stacked Bar Chart</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <title>Athlete Search</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .first-score {
-            fill: green;
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
         }
-        .second-score {
-            fill: orange;
+        input {
+            width: 400px;
+            padding: 10px;
+            font-size: 18px;
+            margin-bottom: 10px;
         }
-        .axis-label {
-            font-size: 14px;
-            font-weight: bold;
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        canvas {
+            margin-top: 20px;
+            width: 80%;
+            max-width: 800px;
         }
     </style>
 </head>
 <body>
-    <svg width="800" height="500"></svg>
+    <h2>Search for Athlete</h2>
+    <input type="text" id="athleteName" placeholder="Enter athlete name">
+    <button onclick="searchAthlete()">Search</button>
+    <canvas id="scoreChart" style="display:none;"></canvas>
     <script>
-        const data = [
-            {category: "A", comp_id: 1, name: "John", position: "1", club_country_code: "USA", first_score: 30, second_score: 40, total: 70, ten_score: 20, nine_score: 10},
-            {category: "B", comp_id: 2, name: "Alice", position: "2", club_country_code: "CAN", first_score: 25, second_score: 35, total: 60, ten_score: 18, nine_score: 12},
-            {category: "C", comp_id: 3, name: "Bob", position: "3", club_country_code: "GBR", first_score: 28, second_score: 36, total: 64, ten_score: 19, nine_score: 11},
-        ];
-
-        const width = 800;
-        const height = 500;
-        const margin = { top: 20, right: 30, bottom: 40, left: 50 };
-
-        const svg = d3.select("svg")
-            .attr("width", width)
-            .attr("height", height);
-
-        const x = d3.scaleBand()
-            .domain(data.map(d => d.name))
-            .range([margin.left, width - margin.right])
-            .padding(0.2);
-
-        const y = d3.scaleLinear()
-            .domain([0, d3.max(data, d => d.total)])
-            .nice()
-            .range([height - margin.bottom, margin.top]);
-
-        const bars = svg.selectAll("g.bar-group")
-            .data(data)
-            .enter().append("g")
-            .attr("class", "bar-group")
-            .attr("transform", d => `translate(${x(d.name)},0)`);
-
-        bars.append("rect")
-            .attr("class", "first-score")
-            .attr("x", 0)
-            .attr("y", d => y(d.total))
-            .attr("height", d => y(0) - y(d.first_score))
-            .attr("width", x.bandwidth());
-
-        bars.append("rect")
-            .attr("class", "second-score")
-            .attr("x", 0)
-            .attr("y", d => y(d.second_score + d.first_score))
-            .attr("height", d => y(0) - y(d.second_score))
-            .attr("width", x.bandwidth());
-
-        svg.append("g")
-            .attr("transform", `translate(0,${height - margin.bottom})`)
-            .call(d3.axisBottom(x));
-
-        svg.append("g")
-            .attr("transform", `translate(${margin.left},0)`)
-            .call(d3.axisLeft(y));
+        async function searchAthlete() {
+            const name = document.getElementById('athleteName').value.trim();
+            if (!name) return;
+            
+            const response = await fetch(`http://localhost:8000/get_athlete_date/${encodeURIComponent(name)}`);
+            if (!response.ok) {
+                alert('Athlete not found or error fetching data');
+                return;
+            }
+            
+            const data = await response.json();
+            const scores = data.scores;
+            if (scores.length === 0) {
+                alert('No data available');
+                return;
+            }
+            
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            document.getElementById('scoreChart').style.display = 'block';
+            
+            const labels = scores.map(score => score.comp_date);
+            const firstScores = scores.map(score => score.first_score);
+            const secondScores = scores.map(score => score.second_score);
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                    {
+                        label: 'First Score',
+                        data: firstScores,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        stack: 'Stack 1'
+                    },
+                    {
+                        label: 'Second Score',
+                        data: secondScores,
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        stack: 'Stack 1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>

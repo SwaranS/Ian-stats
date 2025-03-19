@@ -32,7 +32,7 @@ async def add_outdoor_scores(comp_id: int, comp_year: int):
     list_of_scores = process_outdoor_720_comp_data(comp_year, comp_id)
     return {"scores":list_of_scores}
 
-@app.get("/get_ath_date/{name}")
+@app.get("/get_athlete_date/{name}")
 async def add_outdoor_scores(name: str):
     list_of_scores = get_athlete_data(name)
     return {"scores":list_of_scores}
