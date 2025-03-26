@@ -20,7 +20,17 @@ templates = Jinja2Templates(directory="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    available_athletes = comp_services.get_available_athletes()
+    athlete_names = ','.join(map(str,available_athletes))
+    return templates.TemplateResponse("index.html", {"request": request, "availableAthletes": athlete_names})
+
+@app.get("/compare", response_class=HTMLResponse)
+async def compare(request: Request):
+    # Fetch the list of available athletes
+    available_athletes = comp_services.get_available_athletes()
+    athlete_names = ','.join(map(str,available_athletes))
+    return templates.TemplateResponse("compare.html", {"request": request, "availableAthletes": athlete_names})
+
 
 @app.get("/add_scores/{comp_id}/{comp_year}")
 async def add_scores(comp_id: int, comp_year: int):

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athlete Search</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        .menu {
+            width: 100%;
+            background: #333;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .menu a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 18px;
+        }
+        input {
+            width: 400px;
+            padding: 10px;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        canvas {
+            margin-top: 20px;
+            width: 80%;
+            max-width: 800px;
+        }
+        .athlete-list {
+            margin-top: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="menu">
+        <a href="compare">Compare Stats</a>
+        <a href="index">Individual Stats</a>
+    </div>
+    <h2>Search for Athletes</h2>
+    <div class="athlete-list" id="athleteList"></div>
+    <input type="text" id="athleteInput" placeholder="Enter athlete name" list="athleteSuggestions">
+    <datalist id="athleteSuggestions"></datalist>
+    <button onclick="searchAthletes()">Search</button>
+    <canvas id="scoreChart" style="display:none;"></canvas>
+    <script>
+        const availableAthletes = "{{availableAthletes}}".split(",").map(name => decodeHtmlEntities(name.replace(/'/g, "")));
+        const athleteNames = new Set();
+        
+        document.getElementById("athleteInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                addAthlete();
+            }
+        });
+
+        function decodeHtmlEntities(text) {
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = text;
+            return textarea.value;
+        }
+
+        function capitalizeName(name) {
+            return name.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+        }
+
+        function populateAthleteList() {
+            const datalist = document.getElementById("athleteSuggestions");
+            availableAthletes.forEach(name => {
+                const option = document.createElement("option");
+                option.value = capitalizeName(name);
+                datalist.appendChild(option);
+            });
+        }
+        
+        function addAthlete() {
+            const input = document.getElementById("athleteInput");
+            const name = input.value.trim();
+            if (name && availableAthletes.includes(name) && !athleteNames.has(name)) {
+                athleteNames.add(name);
+                updateAthleteList();
+                input.value = "";
+            } else if (!availableAthletes.includes(name)) {
+                alert("Invalid athlete name. Please select from the suggested list.");
+            }
+        }
+
+        function updateAthleteList() {
+            const listDiv = document.getElementById("athleteList");
+            listDiv.innerHTML = "";
+            athleteNames.forEach(name => {
+                const span = document.createElement("span");
+                span.textContent = name + " ";
+                listDiv.appendChild(span);
+            });
+        }
+
+        async function searchAthletes() {
+            const datasets = [];
+            const labels = new Set();
+
+            for (const name of athleteNames) {
+                const response = await fetch(`http://localhost:8000/get_athlete_date/${encodeURIComponent(name)}`);
+                if (!response.ok) {
+                    alert(`Athlete ${name} not found or error fetching data`);
+                    continue;
+                }
+                
+                const data = await response.json();
+                const scores = data.scores;
+                if (scores.length === 0) {
+                    alert(`No data available for ${name}`);
+                    continue;
+                }
+                
+                scores.forEach(score => labels.add(score.comp_date));
+                datasets.push({
+                    label: `${name} - First Score`,
+                    data: scores.map(score => score.first_score),
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    stack: name
+                });
+                datasets.push({
+                    label: `${name} - Second Score`,
+                    data: scores.map(score => score.second_score),
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    stack: name
+                });
+            }
+            
+            if (datasets.length === 0) return;
+            
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            document.getElementById('scoreChart').style.display = 'block';
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from(labels),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Populate the athlete list on page load
+        populateAthleteList();
+    </script>
+</body>
+</html>

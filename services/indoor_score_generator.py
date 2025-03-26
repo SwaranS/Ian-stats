@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from models.athlete_comp_data import IndoorScore
 
 
-def generate_indoor_scores(url, comp_id, comp_year):
+def generate_indoor_scores(url, comp_year, comp_id):
     response = requests.get(url)
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, "html.parser")

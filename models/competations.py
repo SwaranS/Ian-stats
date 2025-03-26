@@ -6,6 +6,7 @@ class CompTypes(Enum):
     INDOOR = 1
     OUTDOOR_720 = 2
     OUTDOOR_Double_720 = 3
+    OUTDOOR_1440 = 4
 
 
 class CompDetailsInput(BaseModel):

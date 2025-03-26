@@ -5,101 +5,342 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Athlete Search</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <style>
         body {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             flex-direction: column;
-            font-family: Arial, sans-serif;
+            align-items: center;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .menu {
+            width: 100%;
+            background: #007bff;
+            padding: 10px 0;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .menu a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 18px;
+            transition: color 0.3s;
+        }
+        .menu a:hover {
+            color: #ffdd57;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
         }
         input {
             width: 400px;
             padding: 10px;
             font-size: 18px;
-            margin-bottom: 10px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         button {
             padding: 10px 20px;
             font-size: 18px;
             cursor: pointer;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-left: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #218838;
         }
         canvas {
             margin-top: 20px;
             width: 80%;
             max-width: 800px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .athlete-list {
+            margin-top: 10px;
+            font-size: 18px;
+        }
+        .results-container {
+            width: 80%;
+            max-width: 1000px;
+            margin-top: 20px;
+        }
+        .category-section {
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
         }
     </style>
 </head>
 <body>
-    <h2>Search for Athlete</h2>
-    <input type="text" id="athleteName" placeholder="Enter athlete name">
+    <div class="menu">
+        <a href="compare">Compare Stats</a>
+        <a href="index">Individual Stats</a>
+    </div>
+    <h2>Search for Athletes</h2>
+    <div class="athlete-list" id="athleteList"></div>
+    <input type="text" id="athleteInput" placeholder="Enter athlete name" list="athleteSuggestions">
+    <datalist id="athleteSuggestions"></datalist>
     <button onclick="searchAthlete()">Search</button>
-    <canvas id="scoreChart" style="display:none;"></canvas>
+    <div id="results" class="results-container"></div>
     <script>
+        const availableAthletes = "{{availableAthletes}}".split(",").map(name => decodeHtmlEntities(name.replace(/'/g, "")));
+        
+        document.getElementById("athleteInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                searchAthlete();
+            }
+        });
+
+        function decodeHtmlEntities(text) {
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = text;
+            return textarea.value;
+        }
+
+        function capitalizeName(name) {
+            return name.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+        }
+
+        function populateAthleteList() {
+            const datalist = document.getElementById("athleteSuggestions");
+            availableAthletes.forEach(name => {
+                const option = document.createElement("option");
+                option.value = name;
+                datalist.appendChild(option);
+            });
+        }
+
         async function searchAthlete() {
-            const name = document.getElementById('athleteName').value.trim();
-            if (!name) return;
-            
-            const response = await fetch(`http://localhost:8000/get_athlete_date/${encodeURIComponent(name)}`);
-            if (!response.ok) {
-                alert('Athlete not found or error fetching data');
-                return;
-            }
-            
-            const data = await response.json();
-            const scores = data.scores;
-            if (scores.length === 0) {
-                alert('No data available');
-                return;
-            }
-            
-            const ctx = document.getElementById('scoreChart').getContext('2d');
-            document.getElementById('scoreChart').style.display = 'block';
-            
-            const labels = scores.map(score => score.comp_date);
-            const firstScores = scores.map(score => score.first_score);
-            const secondScores = scores.map(score => score.second_score);
-            
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                    {
-                        label: 'First Score',
-                        data: firstScores,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1,
-                        stack: 'Stack 1'
-                    },
-                    {
-                        label: 'Second Score',
-                        data: secondScores,
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1,
-                        stack: 'Stack 1'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        },
-                        x: {
-                            stacked: true
-                        },
-                        y: {
-                            stacked: true
-                        }
+            const input = document.getElementById("athleteInput");
+            const name = input.value.trim();
+            if (name && availableAthletes.includes(name)) {
+                try {
+                    console.log(`Searching for athlete: ${name}`);
+                    const response = await fetch(`http://localhost:8000/get_athlete_date/${encodeURIComponent(name)}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
+                    const data = await response.json();
+                    displayResults(data.scores);
+                } catch (error) {
+                    console.error('Error fetching athlete data:', error);
+                    alert(`Error fetching data for ${name}: ${error.message}`);
+                }
+            } else {
+                alert("Invalid athlete name. Please select from the suggested list.");
+            }
+        }
+
+        function displayResults(scores) {
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';
+
+            const categories = ['indoor_scores', 'outdoor_scores', 'double_outdoor_scores', 'f_1440_scores'];
+            categories.forEach(category => {
+                if (scores[category] && scores[category].length > 0) {
+                    const section = document.createElement('div');
+                    section.className = 'category-section';
+
+                    const categoryTitle = document.createElement('h3');
+                    categoryTitle.textContent = category.replace('_', ' ').toUpperCase();
+                    section.appendChild(categoryTitle);
+
+                    const table = document.createElement('table');
+                    const thead = document.createElement('thead');
+                    const tbody = document.createElement('tbody');
+
+                    const headerRow = `
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Competition</th>
+                            <th>Position</th>
+                            <th>1st Score</th>
+                            <th>2nd Score</th>
+                            <th>Total</th>
+                            <th>10s</th>
+                            <th>9s</th>
+                        </tr>`;
+                    thead.innerHTML = headerRow;
+
+                    scores[category].forEach(score => {
+                        const row = document.createElement('tr');
+                        const date = new Date(score.comp_date).toLocaleDateString();
+                        row.innerHTML = `
+                            <td>${date}</td>
+                            <td>${score.category}</td>
+                            <td>${score.comp_name}</td>
+                            <td>${score.position}</td>
+                            <td>${score.first_score}</td>
+                            <td>${score.second_score}</td>
+                            <td>${score.total}</td>
+                            <td>${score.ten_score}</td>
+                            <td>${score.nine_score}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    table.appendChild(thead);
+                    table.appendChild(tbody);
+                    section.appendChild(table);
+
+                    const canvas = document.createElement('canvas');
+                    canvas.id = `${category}Chart`;
+                    section.appendChild(canvas);
+
+                    const labels = scores[category].map(score => new Date(score.comp_date));
+                    const totals = scores[category].map(score => score.total);
+                    const tenScores = scores[category].map(score => score.ten_score);
+
+                    const ctx = canvas.getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Total Score',
+                                data: totals,
+                                borderColor: '#2ecc71',
+                                backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 8,
+                                pointBackgroundColor: '#fff',
+                                pointBorderColor: '#2ecc71',
+                                pointBorderWidth: 2
+                            }, {
+                                label: '10s',
+                                data: tenScores,
+                                borderColor: '#e74c3c',
+                                backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointHoverRadius: 8,
+                                pointBackgroundColor: '#fff',
+                                pointBorderColor: '#e74c3c',
+                                pointBorderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            scales: {
+                                x: {
+                                    type: 'time',
+                                    time: {
+                                        unit: 'month',
+                                        displayFormats: {
+                                            month: 'MMM yyyy'
+                                        }
+                                    },
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Date',
+                                        color: '#333',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Score',
+                                        color: '#333',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top',
+                                    labels: {
+                                        boxWidth: 20,
+                                        padding: 20,
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleFont: {
+                                        size: 14
+                                    },
+                                    bodyFont: {
+                                        size: 12
+                                    },
+                                    padding: 10,
+                                    cornerRadius: 4
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                intersect: false
+                            },
+                            animation: {
+                                duration: 1000,
+                                easing: 'easeOutQuart'
+                            }
+                        }
+                    });
+
+                    resultsContainer.appendChild(section);
                 }
             });
         }
+
+        populateAthleteList();
     </script>
 </body>
 </html>
