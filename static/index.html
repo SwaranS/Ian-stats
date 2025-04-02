@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Athlete Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <style>
@@ -13,97 +14,160 @@
             align-items: center;
             font-family: 'Roboto', sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f0f2f5;
+            padding: 0;
+            background-color: #f4f4f4; /* Light gray background */
         }
         .menu {
             width: 100%;
-            background: #007bff;
-            padding: 10px 0;
+            background-color: #004d40; /* Dark teal menu bar */
+            padding: 15px 0;
             text-align: center;
             position: sticky;
             top: 0;
             z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
         .menu a {
             color: white;
             text-decoration: none;
-            margin: 0 15px;
+            margin: 0 20px;
             font-size: 18px;
-            transition: color 0.3s;
+            transition: color 0.3s ease;
         }
         .menu a:hover {
-            color: #ffdd57;
+            color: #ffb74d; /* Light orange hover effect */
         }
         h2 {
-            color: #333;
-            margin-bottom: 20px;
+            color: #2e7d32; /* Dark green heading */
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 500;
         }
         input {
-            width: 400px;
-            padding: 10px;
+            width: 450px;
+            padding: 12px 15px;
             font-size: 18px;
-            margin-top: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 25px;
+            border: 1px solid #b0bec5; /* Light steel blue border */
+            border-radius: 6px;
+            box-shadow: 0 3px 7px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+        input:focus {
+            outline: none;
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+            border-color: #4caf50; /* Green focus border */
         }
         button {
-            padding: 10px 20px;
+            padding: 12px 25px;
             font-size: 18px;
             cursor: pointer;
-            background-color: #28a745;
+            background-color: #004d40; /* Green button */
             color: white;
             border: none;
-            border-radius: 4px;
-            margin-left: 10px;
-            transition: background-color 0.3s;
+            border-radius: 6px;
+            margin-left: 15px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         button:hover {
-            background-color: #218838;
+            background-color: #388e3c; /* Darker green hover */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
         canvas {
-            margin-top: 20px;
-            width: 80%;
-            max-width: 800px;
+            margin-top: 30px;
+            width: 90%;
+            max-width: 900px;
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transition: box-shadow 0.3s ease;
         }
+        canvas:hover {
+             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
         .athlete-list {
-            margin-top: 10px;
+            margin-top: 15px;
             font-size: 18px;
+            color: #555;
         }
         .results-container {
-            width: 80%;
-            max-width: 1000px;
-            margin-top: 20px;
+            width: 90%;
+            max-width: 1100px;
+            margin-top: 30px;
         }
         .category-section {
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transition: box-shadow 0.3s ease;
+        }
+        .category-section:hover{
+             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        .category-section h3{
+            color: #00695c; /* Darker teal for category title */
+            text-align: center;
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #80cbc4; /* Light teal border */
+            padding-bottom: 10px;
+
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
         }
         th, td {
-            padding: 12px;
+            padding: 15px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #e0e0e0; /* Light gray border */
         }
         th {
-            background-color: #007bff;
+            background-color: #00897b; /* Teal header */
             color: white;
+            font-weight: 500;
         }
         tr:hover {
-            background-color: #f1f1f1;
+            background-color: #f0f4c3; /* Light yellow hover */
         }
+        @media (max-width: 768px) {
+            input {
+                width: 100%;
+            }
+            button {
+                margin-left: 0;
+                margin-top: 15px;
+            }
+            .menu a{
+               font-size: 16px;
+               margin: 0 10px;
+            }
+            h2{
+                font-size: 24px;
+            }
+        }
+        .button-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+        color: #004d40;
+    }
     </style>
 </head>
 <body>
@@ -115,11 +179,13 @@
     <div class="athlete-list" id="athleteList"></div>
     <input type="text" id="athleteInput" placeholder="Enter athlete name" list="athleteSuggestions">
     <datalist id="athleteSuggestions"></datalist>
-    <button onclick="searchAthlete()">Search</button>
+    <div class="button-container">
+        <button onclick="searchAthlete()">Search</button>
+    </div>
     <div id="results" class="results-container"></div>
     <script>
         const availableAthletes = "{{availableAthletes}}".split(",").map(name => decodeHtmlEntities(name.replace(/'/g, "")));
-        
+
         document.getElementById("athleteInput").addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
                 event.preventDefault();
@@ -274,10 +340,10 @@
                                     grid: {
                                         color: 'rgba(0, 0, 0, 0.05)'
                                     },
-                                    title: {
+                                     title: {
                                         display: true,
                                         text: 'Date',
-                                        color: '#333',
+                                        color: '#444',
                                         font: {
                                             size: 14,
                                             weight: 'bold'
@@ -292,7 +358,7 @@
                                     title: {
                                         display: true,
                                         text: 'Score',
-                                        color: '#333',
+                                        color: '#444',
                                         font: {
                                             size: 14,
                                             weight: 'bold'
